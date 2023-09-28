@@ -10,6 +10,12 @@ class MockInAppPurchasePlatform
 
   @override
   Future<String?> getPlatformVersion() => Future.value('42');
+
+  @override
+  Stream getEventStream() {
+    // TODO: implement getEventStream
+    throw UnimplementedError();
+  }
 }
 
 void main() {

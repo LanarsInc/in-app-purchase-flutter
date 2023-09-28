@@ -3,9 +3,13 @@ import 'dart:async';
 
 import 'package:flutter/services.dart';
 import 'package:inapp_purchase/inapp_purchase.dart';
+import 'package:inapp_purchase/inapp_purchase_platform_interface.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  InAppPurchasePlatform.instance.getEventStream().listen((event) {
+    print('NEW STREAM EVENT: $event');
+  });
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       systemNavigationBarColor: Colors.transparent,
@@ -68,6 +72,11 @@ class _MyAppState extends State<MyApp> {
       home: Scaffold(
         appBar: AppBar(
           title: const Text('Plugin example app'),
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () {
+            initPlatformState();
+          },
         ),
         body: Center(
           child: Text('Running on: $_platformVersion\n'),

@@ -26,4 +26,8 @@ abstract class InAppPurchasePlatform extends PlatformInterface {
   Future<String?> getPlatformVersion() {
     throw UnimplementedError('platformVersion() has not been implemented.');
   }
+
+  Stream<dynamic> getEventStream() {
+    throw UnimplementedError('getEventStream() has not been implemented.');
+  }
 }

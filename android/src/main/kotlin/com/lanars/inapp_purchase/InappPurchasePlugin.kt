@@ -1,5 +1,6 @@
 package com.lanars.inapp_purchase
 
+import android.os.Looper
 import androidx.annotation.NonNull
 
 import io.flutter.embedding.engine.plugins.FlutterPlugin
@@ -26,6 +27,7 @@ class InAppPurchasePlugin: FlutterPlugin, MethodCallHandler {
       result.success("Android ${android.os.Build.VERSION.RELEASE}")
     } else {
       result.notImplemented()
+      Looper
     }
   }
 

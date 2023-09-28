@@ -9,9 +9,21 @@ class MethodChannelInAppPurchase extends InAppPurchasePlatform {
   @visibleForTesting
   final methodChannel = const MethodChannel('inapp_purchase');
 
+  final eventChannel = const EventChannel('inapp_purchase_events');
+
   @override
   Future<String?> getPlatformVersion() async {
+    final args = {
+      'productId': 'basic_monthly',
+    };
+    await methodChannel.invokeMethod('buy(Product)', args);
     final version = await methodChannel.invokeMethod<String>('getPlatformVersion');
+    methodChannel.invokeMethod('refreshProducts()');
     return version;
+  }
+
+  @override
+  Stream getEventStream() {
+    return eventChannel.receiveBroadcastStream();
   }
 }

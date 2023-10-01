@@ -1,6 +1,8 @@
 import Flutter
 import UIKit
 import StoreKit
+import Foundation
+import Combine
 
 public class InAppPurchasePlugin: NSObject, FlutterPlugin {
     
@@ -9,22 +11,11 @@ public class InAppPurchasePlugin: NSObject, FlutterPlugin {
     private static let streamHandler = StreamHandler()
     
     public static func register(with registrar: FlutterPluginRegistrar) {
-        let methodChannel = FlutterMethodChannel(name: "inapp_purchase", binaryMessenger: registrar.messenger())
+        let methodChannel = FlutterMethodChannel(name: "inapp_purchase_methods", binaryMessenger: registrar.messenger())
         let eventChannel = FlutterEventChannel(name: "inapp_purchase_events", binaryMessenger: registrar.messenger())
         let instance = InAppPurchasePlugin()
         registrar.addMethodCallDelegate(instance, channel: methodChannel)
         eventChannel.setStreamHandler(self.streamHandler)
-        
-        store.$availableSubscriptions.sink() { products in
-            Task {
-                if #available(iOS 16.0, *) {
-                    try await Task.sleep(for: Duration.milliseconds(1000))
-                } else {
-                    // Fallback on earlier versions
-                }
-                self.streamHandler.eventSink?("Products updated")
-            }
-        }
     }
     
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
@@ -60,16 +51,31 @@ public class InAppPurchasePlugin: NSObject, FlutterPlugin {
     }
     
     class StreamHandler : NSObject, FlutterStreamHandler {
-        var eventSink: FlutterEventSink?
+        private var eventSink: FlutterEventSink?
         
-        public func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink) -> FlutterError? {
+        private var availableSubscriptionsCancelable: Cancellable?
+        
+        func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink) -> FlutterError? {
             self.eventSink = events
+            startListeningPurchases()
             return nil
         }
         
-        public func onCancel(withArguments arguments: Any?) -> FlutterError? {
+        func onCancel(withArguments arguments: Any?) -> FlutterError? {
             self.eventSink = nil
+            availableSubscriptionsCancelable?.cancel()
+            availableSubscriptionsCancelable = nil
             return nil
+        }
+        
+        func sendEvent(_ event: Any) {
+            eventSink?(event)
+        }
+        
+        private func startListeningPurchases() {
+            availableSubscriptionsCancelable = store.$availableSubscriptions.sink { products in
+                self.sendEvent("Products updated")
+            }
         }
     }
 }

@@ -7,7 +7,7 @@ import 'inapp_purchase_platform_interface.dart';
 class MethodChannelInAppPurchase extends InAppPurchasePlatform {
   /// The method channel used to interact with the native platform.
   @visibleForTesting
-  final methodChannel = const MethodChannel('inapp_purchase');
+  final methodChannel = const MethodChannel('inapp_purchase_methods');
 
   final eventChannel = const EventChannel('inapp_purchase_events');
 
@@ -18,7 +18,6 @@ class MethodChannelInAppPurchase extends InAppPurchasePlatform {
     };
     await methodChannel.invokeMethod('buy(Product)', args);
     final version = await methodChannel.invokeMethod<String>('getPlatformVersion');
-    methodChannel.invokeMethod('refreshProducts()');
     return version;
   }
 

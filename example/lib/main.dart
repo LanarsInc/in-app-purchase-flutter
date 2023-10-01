@@ -7,8 +7,8 @@ import 'package:inapp_purchase/inapp_purchase_platform_interface.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  InAppPurchasePlatform.instance.getEventStream().listen((event) {
-    print('NEW STREAM EVENT: $event');
+  InAppPurchasePlatform.instance.availableSubscriptions.listen((event) {
+    print('Subscriptions updated: $event');
   });
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(

@@ -1,5 +1,8 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:inapp_purchase/models/product.dart';
 
 import 'inapp_purchase_platform_interface.dart';
 
@@ -22,7 +25,12 @@ class MethodChannelInAppPurchase extends InAppPurchasePlatform {
   }
 
   @override
-  Stream getEventStream() {
-    return eventChannel.receiveBroadcastStream();
-  }
+  Stream<List<Product>> get availableSubscriptions => eventChannel.receiveBroadcastStream().map(
+        (event) => (event as List<dynamic>).map(
+          (item) {
+            final json = jsonDecode(item) as Map<String, dynamic>;
+            return ProductJsonExtension.fromJson(json);
+          },
+        ).toList(),
+      );
 }

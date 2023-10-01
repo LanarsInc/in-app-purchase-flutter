@@ -1,6 +1,6 @@
+import 'package:inapp_purchase/inapp_purchase_method_channel.dart';
+import 'package:inapp_purchase/models/product.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
-
-import 'inapp_purchase_method_channel.dart';
 
 abstract class InAppPurchasePlatform extends PlatformInterface {
   /// Constructs a InAppPurchasePlatform.
@@ -27,7 +27,6 @@ abstract class InAppPurchasePlatform extends PlatformInterface {
     throw UnimplementedError('platformVersion() has not been implemented.');
   }
 
-  Stream<dynamic> getEventStream() {
-    throw UnimplementedError('getEventStream() has not been implemented.');
-  }
+  Stream<List<Product>> get availableSubscriptions =>
+      throw UnimplementedError('productStream has not been implemented.');
 }

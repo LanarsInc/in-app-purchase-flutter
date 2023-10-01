@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:inapp_purchase/inapp_purchase.dart';
 import 'package:inapp_purchase/inapp_purchase_platform_interface.dart';
 import 'package:inapp_purchase/inapp_purchase_method_channel.dart';
+import 'package:inapp_purchase/models/product.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 class MockInAppPurchasePlatform
@@ -12,10 +13,8 @@ class MockInAppPurchasePlatform
   Future<String?> getPlatformVersion() => Future.value('42');
 
   @override
-  Stream getEventStream() {
-    // TODO: implement getEventStream
-    throw UnimplementedError();
-  }
+  // TODO: implement availableSubscriptions
+  Stream<List<Product>> get availableSubscriptions => throw UnimplementedError();
 }
 
 void main() {

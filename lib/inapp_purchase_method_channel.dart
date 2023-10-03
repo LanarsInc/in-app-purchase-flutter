@@ -10,9 +10,9 @@ import 'inapp_purchase_platform_interface.dart';
 class MethodChannelInAppPurchase extends InAppPurchasePlatform {
   /// The method channel used to interact with the native platform.
   @visibleForTesting
-  final methodChannel = const MethodChannel('inapp_purchase_methods');
+  final methodChannel = const MethodChannel('com.lanars.inapp_purchase/methods');
 
-  final eventChannel = const EventChannel('inapp_purchase_events');
+  final eventChannel = const EventChannel('com.lanars.inapp_purchase/subscriptions');
 
   @override
   Future<String?> getPlatformVersion() async {

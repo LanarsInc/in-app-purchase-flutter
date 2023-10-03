@@ -11,8 +11,8 @@ public class InAppPurchasePlugin: NSObject, FlutterPlugin {
     private static let streamHandler = StreamHandler()
     
     public static func register(with registrar: FlutterPluginRegistrar) {
-        let methodChannel = FlutterMethodChannel(name: "inapp_purchase_methods", binaryMessenger: registrar.messenger())
-        let eventChannel = FlutterEventChannel(name: "inapp_purchase_events", binaryMessenger: registrar.messenger())
+        let methodChannel = FlutterMethodChannel(name: "com.lanars.inapp_purchase/methods", binaryMessenger: registrar.messenger())
+        let eventChannel = FlutterEventChannel(name: "com.lanars.inapp_purchase/subscriptions", binaryMessenger: registrar.messenger())
         let instance = InAppPurchasePlugin()
         registrar.addMethodCallDelegate(instance, channel: methodChannel)
         eventChannel.setStreamHandler(self.streamHandler)
@@ -74,7 +74,10 @@ public class InAppPurchasePlugin: NSObject, FlutterPlugin {
         
         private func startListeningPurchases() {
             availableSubscriptionsCancelable = store.$availableSubscriptions.sink { products in
-                self.sendEvent("Products updated")
+                //                let jsonProducts = products.map { $0.jsonRepresentation }
+                let jsonProducts = [
+                    "{\"id\": \"1\", \"displayName\": \"Monthly premium\", \"description\": \"Monthly\", \"price\": 9.99, \"displayPrice\": \"$99.9\"}"]
+                self.sendEvent(jsonProducts)
             }
         }
     }

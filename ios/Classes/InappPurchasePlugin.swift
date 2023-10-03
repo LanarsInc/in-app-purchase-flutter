@@ -4,7 +4,7 @@ import StoreKit
 import Foundation
 import Combine
 
-public class InAppPurchasePlugin: NSObject, FlutterPlugin {
+public class InappPurchasePlugin: NSObject, FlutterPlugin {
     
     private static let store = Store()
     
@@ -13,7 +13,7 @@ public class InAppPurchasePlugin: NSObject, FlutterPlugin {
     public static func register(with registrar: FlutterPluginRegistrar) {
         let methodChannel = FlutterMethodChannel(name: "com.lanars.inapp_purchase/methods", binaryMessenger: registrar.messenger())
         let eventChannel = FlutterEventChannel(name: "com.lanars.inapp_purchase/subscriptions", binaryMessenger: registrar.messenger())
-        let instance = InAppPurchasePlugin()
+        let instance = InappPurchasePlugin()
         registrar.addMethodCallDelegate(instance, channel: methodChannel)
         eventChannel.setStreamHandler(self.streamHandler)
     }
@@ -37,7 +37,7 @@ public class InAppPurchasePlugin: NSObject, FlutterPlugin {
     private func onRefreshProducts(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
         print("Refresh products")
         Task {
-            await InAppPurchasePlugin.store.requestProducts()
+            await InappPurchasePlugin.store.requestProducts()
         }
         result(nil)
     }
@@ -45,7 +45,17 @@ public class InAppPurchasePlugin: NSObject, FlutterPlugin {
     private func onBuyProduct(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
         if let args = BuyArguments(call) {
             print("Buy product \(args.productId)")
-            result(nil)
+            Task {
+                do {
+                    let product = InappPurchasePlugin.store.availableSubscriptions.first { product in
+                        product.id == args.productId
+                    }
+                    let purchaseResult = try await product?.purchase()
+                    result(nil)
+                } catch {
+                    result(nil)
+                }
+            }
         }
         result(nil)
     }

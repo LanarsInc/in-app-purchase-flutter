@@ -33,4 +33,17 @@ class MethodChannelInAppPurchase extends InAppPurchasePlatform {
           },
         ).toList(),
       );
+
+  @override
+  void buy(Product product) {
+    final args = {
+      'productId': product.id,
+    };
+    methodChannel.invokeMethod('buy(Product)', args);
+  }
+
+  @override
+  void refreshProducts() {
+    methodChannel.invokeMethod('refreshProducts()');
+  }
 }

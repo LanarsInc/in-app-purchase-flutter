@@ -1,5 +1,3 @@
-import 'dart:io';
-
 class Product {
   final String id;
   final String title;
@@ -38,32 +36,11 @@ class Product {
 
 extension ProductJsonExtension on Product {
   static Product fromJson(Map<String, dynamic> json) {
-    switch (Platform.operatingSystem) {
-      case 'android':
-        return _androidFromJson(json);
-      case 'ios':
-        return _iosFromJson(json);
-      default:
-        throw UnsupportedError('Unsupported platform ${Platform.operatingSystem}');
-    }
-  }
-
-  static Product _androidFromJson(Map<String, dynamic> json) {
-    return Product(
-      id: json['productId'],
-      title: json['title'],
-      description: json['description'],
-      price: double.parse(json['price']),
-      displayPrice: json['displayPrice'],
-    );
-  }
-
-  static Product _iosFromJson(Map<String, dynamic> json) {
     return Product(
       id: json['id'],
-      title: json['displayName'],
+      title: json['title'],
       description: json['description'],
-      price: json['price'],
+      price: (json['price'] as num).toDouble(),
       displayPrice: json['displayPrice'],
     );
   }

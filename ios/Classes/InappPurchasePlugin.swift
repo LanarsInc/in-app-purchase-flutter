@@ -74,10 +74,10 @@ public class InAppPurchasePlugin: NSObject, FlutterPlugin {
         
         private func startListeningPurchases() {
             availableSubscriptionsCancelable = store.$availableSubscriptions.sink { products in
-                //                let jsonProducts = products.map { $0.jsonRepresentation }
-                let jsonProducts = [
-                    "{\"id\": \"1\", \"displayName\": \"Monthly premium\", \"description\": \"Monthly\", \"price\": 9.99, \"displayPrice\": \"$99.9\"}"]
+                let jsonProducts = products.map { $0.toJsonString() }.filter { $0 != nil }
                 self.sendEvent(jsonProducts)
+                //                let jsonProducts = [
+                //                    "{\"id\": \"1\", \"displayName\": \"Monthly premium\", \"description\": \"Monthly\", \"price\": 9.99, \"displayPrice\": \"$99.9\"}"]
             }
         }
     }
@@ -99,5 +99,30 @@ struct BuyArguments {
         } else {
             return nil
         }
+    }
+}
+
+extension Product: Encodable {
+    enum CodingKeys: CodingKey {
+        case id, title, description, price, displayPrice
+    }
+    
+    public func encode(to encoder: Encoder) throws {
+        var container: KeyedEncodingContainer<Product.CodingKeys> = encoder.container(keyedBy: CodingKeys.self)
+        
+        try container.encode(id, forKey: .id)
+        try container.encode(displayName, forKey: .title)
+        try container.encode(description, forKey: .description)
+        try container.encode(price, forKey: .price)
+        try container.encode(displayPrice, forKey: .displayPrice)
+    }
+}
+
+extension Product {
+    func toJsonString() -> String? {
+        if let data = try? JSONEncoder().encode(self) {
+            return String(data: data, encoding: .utf8)
+        }
+        return nil
     }
 }

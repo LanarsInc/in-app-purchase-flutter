@@ -152,7 +152,7 @@ public class InappPurchasePlugin: NSObject, FlutterPlugin {
 enum Method: String {
     case refreshProducts = "refreshProducts()"
     case buy = "buy(Product)"
-    case restore = "restore()"
+    case restore = "restorePurchases()"
     case getPlatformVersion = "getPlatformVersion" // TODO: remove
 }
 

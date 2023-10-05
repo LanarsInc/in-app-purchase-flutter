@@ -24,7 +24,7 @@ if (flutterVersionName == null) {
 
 android {
     namespace "com.lanars.inapp_purchase_example"
-    compileSdkVersion flutter.compileSdkVersion
+    compileSdk 34
     ndkVersion flutter.ndkVersion
 
     compileOptions {

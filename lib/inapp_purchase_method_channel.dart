@@ -61,4 +61,9 @@ class MethodChannelInAppPurchase extends InAppPurchasePlatform {
   void refreshProducts() {
     methodChannel.invokeMethod('refreshProducts()');
   }
+
+  @override
+  void restore() {
+    methodChannel.invokeMethod('restore()');
+  }
 }

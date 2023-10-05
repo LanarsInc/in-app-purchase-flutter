@@ -36,4 +36,6 @@ abstract class InAppPurchasePlatform extends PlatformInterface {
   void buy(Product product) => throw UnimplementedError('buy has not been implemented.');
 
   void refreshProducts() => throw UnimplementedError('refreshProducts has not been implemented.');
+
+  void restore() => throw UnimplementedError('restore has not been implemented.');
 }

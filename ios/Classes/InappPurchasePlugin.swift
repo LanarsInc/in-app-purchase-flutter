@@ -40,6 +40,8 @@ public class InappPurchasePlugin: NSObject, FlutterPlugin {
             onRefreshProducts(call, result)
         case .buy:
             onBuyProduct(call, result)
+        case .restore:
+            onRestore(call, result)
         case .getPlatformVersion:
             result("iOS " + UIDevice.current.systemVersion)
         }
@@ -73,6 +75,17 @@ public class InappPurchasePlugin: NSObject, FlutterPlugin {
             }
         }
         result(nil)
+    }
+    
+    private func onRestore(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
+        Task {
+            do {
+                try await AppStore.sync()
+                result(nil)
+            } catch {
+                result(FlutterError())
+            }
+        }
     }
     
     class SubscriptionsStreamHandler : NSObject, FlutterStreamHandler {
@@ -139,6 +152,7 @@ public class InappPurchasePlugin: NSObject, FlutterPlugin {
 enum Method: String {
     case refreshProducts = "refreshProducts()"
     case buy = "buy(Product)"
+    case restore = "restore()"
     case getPlatformVersion = "getPlatformVersion" // TODO: remove
 }
 

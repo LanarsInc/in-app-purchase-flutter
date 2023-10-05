@@ -27,6 +27,11 @@ class MockInAppPurchasePlatform
   }
 
   @override
+  void restore() {
+    // TODO: implement restore
+  }
+
+  @override
   // TODO: implement purchasedSubscriptions
   Stream<List<Product>> get purchasedSubscriptions => throw UnimplementedError();
 }

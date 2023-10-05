@@ -15,6 +15,20 @@ class MockInAppPurchasePlatform
   @override
   // TODO: implement availableSubscriptions
   Stream<List<Product>> get availableSubscriptions => throw UnimplementedError();
+
+  @override
+  void buy(Product product) {
+    // TODO: implement buy
+  }
+
+  @override
+  void refreshProducts() {
+    // TODO: implement refreshProducts
+  }
+
+  @override
+  // TODO: implement purchasedSubscriptions
+  Stream<List<Product>> get purchasedSubscriptions => throw UnimplementedError();
 }
 
 void main() {

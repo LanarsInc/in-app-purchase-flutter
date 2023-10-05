@@ -12,7 +12,10 @@ class MethodChannelInAppPurchase extends InAppPurchasePlatform {
   @visibleForTesting
   final methodChannel = const MethodChannel('com.lanars.inapp_purchase/methods');
 
-  final eventChannel = const EventChannel('com.lanars.inapp_purchase/subscriptions');
+  final subscriptionsChannel = const EventChannel('com.lanars.inapp_purchase/subscriptions');
+
+  final purchasedSubscriptionsChannel =
+      const EventChannel("com.lanars.inapp_purchase/purchased_subs");
 
   @override
   Future<String?> getPlatformVersion() async {
@@ -25,14 +28,26 @@ class MethodChannelInAppPurchase extends InAppPurchasePlatform {
   }
 
   @override
-  Stream<List<Product>> get availableSubscriptions => eventChannel.receiveBroadcastStream().map(
-        (event) => (event as List<dynamic>).map(
-          (item) {
-            final json = jsonDecode(item) as Map<String, dynamic>;
-            return ProductJsonExtension.fromJson(json);
-          },
-        ).toList(),
-      );
+  Stream<List<Product>> get availableSubscriptions =>
+      subscriptionsChannel.receiveBroadcastStream().map(
+            (event) => (event as List<dynamic>).map(
+              (item) {
+                final json = jsonDecode(item) as Map<String, dynamic>;
+                return ProductJsonExtension.fromJson(json);
+              },
+            ).toList(),
+          );
+
+  @override
+  Stream<List<Product>> get purchasedSubscriptions =>
+      purchasedSubscriptionsChannel.receiveBroadcastStream().map(
+            (event) => (event as List<dynamic>).map(
+              (item) {
+                final json = jsonDecode(item) as Map<String, dynamic>;
+                return ProductJsonExtension.fromJson(json);
+              },
+            ).toList(),
+          );
 
   @override
   void buy(Product product) {

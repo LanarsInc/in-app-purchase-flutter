@@ -28,7 +28,10 @@ abstract class InAppPurchasePlatform extends PlatformInterface {
   }
 
   Stream<List<Product>> get availableSubscriptions =>
-      throw UnimplementedError('productStream has not been implemented.');
+      throw UnimplementedError('availableSubscriptions has not been implemented.');
+
+  Stream<List<Product>> get purchasedSubscriptions =>
+      throw UnimplementedError('purchasedSubscriptions has not been implemented.');
 
   void buy(Product product) => throw UnimplementedError('buy has not been implemented.');
 

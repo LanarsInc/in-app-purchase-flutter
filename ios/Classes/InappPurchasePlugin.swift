@@ -8,14 +8,25 @@ public class InappPurchasePlugin: NSObject, FlutterPlugin {
     
     private static let store = Store()
     
-    private static let streamHandler = StreamHandler()
+    private static let availableSubscriptionStreamHandler = SubscriptionsStreamHandler()
     
     public static func register(with registrar: FlutterPluginRegistrar) {
-        let methodChannel = FlutterMethodChannel(name: "com.lanars.inapp_purchase/methods", binaryMessenger: registrar.messenger())
-        let eventChannel = FlutterEventChannel(name: "com.lanars.inapp_purchase/subscriptions", binaryMessenger: registrar.messenger())
+        let methodChannel = FlutterMethodChannel(
+            name: "com.lanars.inapp_purchase/methods",
+            binaryMessenger: registrar.messenger()
+        )
+        let subscriptionsChannel = FlutterEventChannel(
+            name: "com.lanars.inapp_purchase/subscriptions",
+            binaryMessenger: registrar.messenger()
+        )
+        let purchasedSubscriptionsChannel = FlutterEventChannel(
+            name: "com.lanars.inapp_purchase/purchased_subs",
+            binaryMessenger: registrar.messenger()
+        )
         let instance = InappPurchasePlugin()
         registrar.addMethodCallDelegate(instance, channel: methodChannel)
-        eventChannel.setStreamHandler(self.streamHandler)
+        subscriptionsChannel.setStreamHandler(self.availableSubscriptionStreamHandler)
+        purchasedSubscriptionsChannel.setStreamHandler(PurchasedSubscriptionStreamHandler())
     }
     
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
@@ -47,10 +58,14 @@ public class InappPurchasePlugin: NSObject, FlutterPlugin {
             print("Buy product \(args.productId)")
             Task {
                 do {
-                    let product = InappPurchasePlugin.store.availableSubscriptions.first { product in
+                    let product = InappPurchasePlugin.store.subscriptions.first { product in
                         product.id == args.productId
                     }
-                    let purchaseResult = try await product?.purchase()
+                    if let product = product {
+                        Task {
+                            try await InappPurchasePlugin.store.purchase(product)
+                        }
+                    }
                     result(nil)
                 } catch {
                     result(nil)
@@ -60,10 +75,10 @@ public class InappPurchasePlugin: NSObject, FlutterPlugin {
         result(nil)
     }
     
-    class StreamHandler : NSObject, FlutterStreamHandler {
+    class SubscriptionsStreamHandler : NSObject, FlutterStreamHandler {
         private var eventSink: FlutterEventSink?
         
-        private var availableSubscriptionsCancelable: Cancellable?
+        private var cancellabe: Cancellable?
         
         func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink) -> FlutterError? {
             self.eventSink = events
@@ -73,8 +88,8 @@ public class InappPurchasePlugin: NSObject, FlutterPlugin {
         
         func onCancel(withArguments arguments: Any?) -> FlutterError? {
             self.eventSink = nil
-            availableSubscriptionsCancelable?.cancel()
-            availableSubscriptionsCancelable = nil
+            cancellabe?.cancel()
+            cancellabe = nil
             return nil
         }
         
@@ -83,11 +98,39 @@ public class InappPurchasePlugin: NSObject, FlutterPlugin {
         }
         
         private func startListeningPurchases() {
-            availableSubscriptionsCancelable = store.$availableSubscriptions.sink { products in
+            cancellabe = store.$subscriptions.sink { products in
                 let jsonProducts = products.map { $0.toJsonString() }.filter { $0 != nil }
                 self.sendEvent(jsonProducts)
-                //                let jsonProducts = [
-                //                    "{\"id\": \"1\", \"displayName\": \"Monthly premium\", \"description\": \"Monthly\", \"price\": 9.99, \"displayPrice\": \"$99.9\"}"]
+            }
+        }
+    }
+    
+    class PurchasedSubscriptionStreamHandler : NSObject, FlutterStreamHandler {
+        private var eventSink: FlutterEventSink?
+        
+        private var cancellable: Cancellable?
+        
+        func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink) -> FlutterError? {
+            self.eventSink = events
+            startListeningPurchases()
+            return nil
+        }
+        
+        func onCancel(withArguments arguments: Any?) -> FlutterError? {
+            self.eventSink = nil
+            cancellable?.cancel()
+            cancellable = nil
+            return nil
+        }
+        
+        func sendEvent(_ event: Any) {
+            eventSink?(event)
+        }
+        
+        private func startListeningPurchases() {
+            cancellable = store.$purchasedSubscriptions.sink { products in
+                let jsonProducts = products.map { $0.toJsonString() }.filter { $0 != nil }
+                self.sendEvent(jsonProducts)
             }
         }
     }

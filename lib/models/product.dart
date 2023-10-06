@@ -1,9 +1,12 @@
+import 'package:inapp_purchase/models/product_type.dart';
+
 class Product {
   final String id;
   final String title;
   final String description;
   final double price;
   final String displayPrice;
+  final ProductType type;
 
   Product({
     required this.id,
@@ -11,11 +14,12 @@ class Product {
     required this.description,
     required this.price,
     required this.displayPrice,
+    required this.type,
   });
 
   @override
   String toString() {
-    return 'Product{id: $id, title: $title, description: $description, price: $price, displayPrice: $displayPrice}';
+    return 'Product{id: $id, title: $title, description: $description, price: $price, displayPrice: $displayPrice, type: $type}';
   }
 
   @override
@@ -27,11 +31,17 @@ class Product {
           title == other.title &&
           description == other.description &&
           price == other.price &&
-          displayPrice == other.displayPrice;
+          displayPrice == other.displayPrice &&
+          type == other.type;
 
   @override
   int get hashCode =>
-      id.hashCode ^ title.hashCode ^ description.hashCode ^ price.hashCode ^ displayPrice.hashCode;
+      id.hashCode ^
+      title.hashCode ^
+      description.hashCode ^
+      price.hashCode ^
+      displayPrice.hashCode ^
+      type.hashCode;
 }
 
 extension ProductJsonExtension on Product {
@@ -42,6 +52,7 @@ extension ProductJsonExtension on Product {
       description: json['description'],
       price: (json['price'] as num).toDouble(),
       displayPrice: json['displayPrice'],
+      type: ProductTypeExtension.fromString(json['type']),
     );
   }
 }

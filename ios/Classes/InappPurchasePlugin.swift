@@ -186,7 +186,7 @@ struct BuyArguments {
 
 extension Product: Encodable {
     enum CodingKeys: CodingKey {
-        case id, title, description, price, displayPrice
+        case id, title, description, price, displayPrice, type
     }
     
     public func encode(to encoder: Encoder) throws {
@@ -197,6 +197,7 @@ extension Product: Encodable {
         try container.encode(description, forKey: .description)
         try container.encode(price, forKey: .price)
         try container.encode(displayPrice, forKey: .displayPrice)
+        try container.encode(type.asString(), forKey: .type)
     }
 }
 
@@ -206,5 +207,23 @@ extension Product {
             return String(data: data, encoding: .utf8)
         }
         return nil
+    }
+}
+
+extension Product.ProductType {
+    func asString() -> String? {
+        let type: Product.ProductType = self
+        switch type {
+        case .consumable:
+            return "consumable"
+        case .nonConsumable:
+            return "nonConsumable"
+        case .nonRenewable:
+            return "nonRenewable"
+        case .autoRenewable:
+            return "autoRenewable"
+        default:
+            return nil
+        }
     }
 }

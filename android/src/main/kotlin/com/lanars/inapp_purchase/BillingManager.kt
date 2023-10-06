@@ -3,27 +3,37 @@ package com.lanars.inapp_purchase
 import android.app.Activity
 import android.content.Context
 import android.util.Log
+import com.android.billingclient.api.AcknowledgePurchaseParams
 import com.android.billingclient.api.BillingClient
 import com.android.billingclient.api.BillingClient.BillingResponseCode
 import com.android.billingclient.api.BillingClient.ProductType
 import com.android.billingclient.api.BillingClientStateListener
 import com.android.billingclient.api.BillingFlowParams
 import com.android.billingclient.api.BillingResult
+import com.android.billingclient.api.ConsumeParams
 import com.android.billingclient.api.ProductDetails
 import com.android.billingclient.api.Purchase
 import com.android.billingclient.api.PurchasesUpdatedListener
 import com.android.billingclient.api.QueryProductDetailsParams
 import com.android.billingclient.api.QueryProductDetailsParams.Product
+import com.android.billingclient.api.QueryPurchasesParams
+import com.android.billingclient.api.acknowledgePurchase
+import com.android.billingclient.api.consumePurchase
 import com.android.billingclient.api.queryProductDetails
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
+import com.android.billingclient.api.queryPurchasesAsync
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import org.json.JSONObject
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+
+private const val TAG = "BillingManager"
 
 class BillingManager(
     private val applicationContext: Context,
-//    private val coroutineScope: CoroutineScope,
+    private val coroutineScope: CoroutineScope,
+    private val purchaseVerifier: PurchaseVerifier
 //    private val ioDispatcher: CoroutineDispatcher
 ) : BillingClientStateListener, PurchasesUpdatedListener {
 
@@ -34,6 +44,9 @@ class BillingManager(
 
     private val _subscriptions = MutableStateFlow<List<ProductDetails>>(emptyList())
     val subscriptions: StateFlow<List<ProductDetails>> = _subscriptions
+
+    private val _purchasedSubscriptions = MutableStateFlow<List<ProductDetails>>(emptyList())
+    val purchasedSubscriptions: StateFlow<List<ProductDetails>> = _purchasedSubscriptions
 
     init {
         billingClient.startConnection(this)
@@ -64,7 +77,43 @@ class BillingManager(
     }
 
     private fun handlePurchase(purchase: Purchase) {
-        // TODO: implement
+        Log.d(TAG, "handlePurchase: $purchase")
+        coroutineScope.launch {
+            val verified = true /*purchaseVerifier.verify(
+                purchase.purchaseToken,
+                purchase.products.first()
+            )*/
+            if (verified) {
+                val consumeParams = ConsumeParams.newBuilder()
+                    .setPurchaseToken(purchase.purchaseToken)
+                    .build()
+                val consumeResult = withContext(Dispatchers.IO) {
+                    billingClient.consumePurchase(consumeParams)
+                }
+                Log.d(TAG, "handlePurchase result: ${consumeResult.billingResult.responseCode}")
+                if (consumeResult.billingResult.responseCode == BillingResponseCode.OK) {
+                    val products = purchase.products.mapNotNull { productId ->
+                        _subscriptions.value.find { it.productId == productId }
+                    }
+                    val updatedPurchasedSubscriptions =
+                        _purchasedSubscriptions.value.map { subscription ->
+                            products.find { it.productId == subscription.productId } ?: subscription
+                        }
+                    _purchasedSubscriptions.emit(
+                        updatedPurchasedSubscriptions
+                    )
+                }
+            }
+
+            if (!purchase.isAcknowledged) {
+                val acknowledgePurchaseParams = AcknowledgePurchaseParams.newBuilder()
+                    .setPurchaseToken(purchase.purchaseToken)
+                    .build()
+                val ackPurchaseResult = withContext(Dispatchers.IO) {
+                    billingClient.acknowledgePurchase(acknowledgePurchaseParams)
+                }
+            }
+        }
     }
 
     suspend fun refreshProducts() {
@@ -100,7 +149,30 @@ class BillingManager(
             .setProductDetailsParamsList(productDetailsParamsList)
             .build()
         val billingResult = billingClient.launchBillingFlow(activity, billingFlowParams)
+        Log.d("BillingManager", "launchPurchase: $billingResult")
         // TODO: handle result
+    }
+
+     suspend fun refreshPurchases() {
+        val inAppParams = QueryPurchasesParams.newBuilder()
+            .setProductType(ProductType.INAPP)
+            .build()
+        val subsParams = QueryPurchasesParams.newBuilder()
+            .setProductType(ProductType.SUBS)
+            .build()
+        val inAppPurchasesResult = billingClient.queryPurchasesAsync(inAppParams)
+        if (inAppPurchasesResult.billingResult.responseCode == BillingResponseCode.OK) {
+            inAppPurchasesResult.purchasesList.forEach {
+                handlePurchase(it)
+            }
+        }
+        val subsPurchasesResult = billingClient.queryPurchasesAsync(subsParams)
+        if (subsPurchasesResult.billingResult.responseCode == BillingResponseCode.OK) {
+            val list = subsPurchasesResult.purchasesList
+            list.forEach {
+                handlePurchase(it)
+            }
+        }
     }
 
     companion object {

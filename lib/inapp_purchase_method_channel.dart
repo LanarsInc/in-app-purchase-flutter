@@ -17,6 +17,20 @@ class MethodChannelInAppPurchase extends InAppPurchasePlatform {
   final purchasedSubscriptionsChannel =
       const EventChannel("com.lanars.inapp_purchase/purchased_subs");
 
+  MethodChannelInAppPurchase() {
+    methodChannel.setMethodCallHandler(_handleMethodCall);
+  }
+
+  Future<dynamic> _handleMethodCall(MethodCall methodCall) async {
+    switch (methodCall.method) {
+      case 'verifyPurchase':
+        await Future.delayed(const Duration(milliseconds: 500));
+        return Future.value(true);
+      default:
+        throw UnimplementedError();
+    }
+  }
+
   @override
   Future<String?> getPlatformVersion() async {
     final args = {

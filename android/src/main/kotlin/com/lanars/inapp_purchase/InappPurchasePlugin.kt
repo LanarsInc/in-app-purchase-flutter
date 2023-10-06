@@ -20,6 +20,8 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 import java.lang.ref.WeakReference
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 
 private const val TAG = "InAppPurchasePlugin"
 
@@ -35,8 +37,41 @@ class InAppPurchasePlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
 
     private var weakActivity: WeakReference<Activity> = WeakReference(null)
 
+    private val purchaseVerifier = PurchaseVerifier { purchaseToken, productId ->
+        return@PurchaseVerifier suspendCoroutine { continuation ->
+            methodChannel.invokeMethod(
+                "verifyPurchase",
+                mapOf(
+                    "purchaseToken" to purchaseToken,
+                    "productId" to productId
+                ),
+                object : MethodChannel.Result {
+                    override fun success(result: Any?) {
+                        continuation.resume(result as? Boolean ?: false)
+                    }
+
+                    override fun error(
+                        errorCode: String,
+                        errorMessage: String?,
+                        errorDetails: Any?
+                    ) {
+                        continuation.resume(false)
+                    }
+
+                    override fun notImplemented() {
+                        continuation.resume(false)
+                    }
+                }
+            )
+        }
+    }
+
     override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
-        billingManager = BillingManager(flutterPluginBinding.applicationContext)
+        billingManager = BillingManager(
+            flutterPluginBinding.applicationContext,
+            coroutineScope,
+            purchaseVerifier
+        )
         methodChannel = MethodChannel(flutterPluginBinding.binaryMessenger, METHOD_CHANNEL_NAME)
         methodChannel.setMethodCallHandler(this)
         subscriptionsChannel = EventChannel(
@@ -46,9 +81,9 @@ class InAppPurchasePlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
         subscriptionsChannel.setStreamHandler(SubscriptionStreamHandler())
         purchasedSubscriptionsChannel = EventChannel(
             flutterPluginBinding.binaryMessenger,
-            "com.lanars.inapp_purchase/purchased_subs"
+            PURCHASED_SUBSCRIPTIONS_CHANNEL_NAME
         )
-//        purchasedSubscriptionsChannel.setStreamHandler(PurchasedSubscriptionStreamHandler())
+        purchasedSubscriptionsChannel.setStreamHandler(PurchasedSubscriptionStreamHandler())
     }
 
     override fun onMethodCall(call: MethodCall, result: Result) {
@@ -68,6 +103,7 @@ class InAppPurchasePlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                     } catch (e: Throwable) {
                         result.error(e.localizedMessage.orEmpty(), null, null)
                     }
+                    billingManager.refreshPurchases()
                 }
             }
 
@@ -134,6 +170,7 @@ class InAppPurchasePlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
     companion object {
         const val METHOD_CHANNEL_NAME = "com.lanars.inapp_purchase/methods"
         const val SUBSCRIPTIONS_CHANNEL_NAME = "com.lanars.inapp_purchase/subscriptions"
+        const val PURCHASED_SUBSCRIPTIONS_CHANNEL_NAME = "com.lanars.inapp_purchase/purchased_subs"
     }
 
     enum class Method(val methodName: String) {
@@ -157,6 +194,29 @@ class InAppPurchasePlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             this.eventSink = events
             listenJob = coroutineScope.launch {
                 billingManager.subscriptions.collect { subscriptions ->
+                    sendEvent(subscriptions.map { it.toJsonString() })
+                }
+            }
+        }
+
+        override fun onCancel(arguments: Any?) {
+            this.eventSink = null
+            listenJob?.cancel()
+        }
+
+        private fun sendEvent(event: Any) {
+            eventSink?.success(event)
+        }
+    }
+
+    inner class PurchasedSubscriptionStreamHandler : EventChannel.StreamHandler {
+        private var eventSink: EventChannel.EventSink? = null
+        private var listenJob: Job? = null
+
+        override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
+            this.eventSink = events
+            listenJob = coroutineScope.launch {
+                billingManager.purchasedSubscriptions.collect { subscriptions ->
                     sendEvent(subscriptions.map { it.toJsonString() })
                 }
             }

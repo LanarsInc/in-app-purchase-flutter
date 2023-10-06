@@ -96,14 +96,17 @@ class InAppPurchasePlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
             Method.REFRESH_PRODUCTS -> {
                 Log.d(TAG, "onMethodCall: ${method.methodName}")
 
+                val identifiers = call.argument<List<String>>("identifiers") ?: run {
+                    result.error("identifiers is null", null, null)
+                    return
+                }
                 coroutineScope.launch(Dispatchers.IO) {
                     try {
-                        billingManager.refreshProducts()
+                        billingManager.requestProducts(identifiers)
                         result.success(null)
                     } catch (e: Throwable) {
                         result.error(e.localizedMessage.orEmpty(), null, null)
                     }
-                    billingManager.refreshPurchases()
                 }
             }
 
@@ -174,7 +177,7 @@ class InAppPurchasePlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
     }
 
     enum class Method(val methodName: String) {
-        REFRESH_PRODUCTS("refreshProducts()"),
+        REFRESH_PRODUCTS("requestProducts([String])"),
         BUY_PRODUCT("buy(Product)"),
         RESTORE_PURCHASES("restorePurchases()"),
         GET_PLATFORM_VERSION("getPlatformVersion"); // TODO: remove

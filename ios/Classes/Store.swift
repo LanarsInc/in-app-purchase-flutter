@@ -30,8 +30,6 @@ class Store: ObservableObject {
     
     var updateListenerTask: Task<Void, Error>? = nil
     
-    private let productIds = ["basic_subscription_monthly", "basic_subscription_yearly"] // TODO: pass dynamically
-    
     init() {
         //Initialize empty products, and then do a product request asynchronously to fill them in.
         nonConsumables = []
@@ -43,9 +41,6 @@ class Store: ObservableObject {
         updateListenerTask = listenForTransactions()
         
         Task {
-            //During store initialization, request products from the App Store.
-            await requestProducts()
-            
             //Deliver products that the customer purchases.
             await updateCustomerProductStatus()
         }
@@ -77,10 +72,10 @@ class Store: ObservableObject {
     }
     
     @MainActor
-    func requestProducts() async {
+    func requestProducts(for identifiers: [String]) async {
         do {
             //Request products from the App Store using the identifiers that the Products.plist file defines.
-            let storeProducts = try await Product.products(for: productIds)
+            let storeProducts = try await Product.products(for: identifiers)
             
             var newNonConsumables: [Product] = []
             var newSubscriptions: [Product] = []

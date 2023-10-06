@@ -11,7 +11,7 @@ abstract interface class InAppPurchaseManager {
 
   Stream<Product> get purchasedSubscriptions;
 
-  void refreshProducts();
+  void requestProducts();
 
   void buy(Product product);
 }

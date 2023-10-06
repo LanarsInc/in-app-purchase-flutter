@@ -10,9 +10,6 @@ class MockInAppPurchasePlatform
     implements InAppPurchasePlatform {
 
   @override
-  Future<String?> getPlatformVersion() => Future.value('42');
-
-  @override
   // TODO: implement availableSubscriptions
   Stream<List<Product>> get availableSubscriptions => throw UnimplementedError();
 
@@ -22,7 +19,7 @@ class MockInAppPurchasePlatform
   }
 
   @override
-  void refreshProducts() {
+  void requestProducts(Set<String> identifiers) {
     // TODO: implement refreshProducts
   }
 
@@ -48,6 +45,6 @@ void main() {
     MockInAppPurchasePlatform fakePlatform = MockInAppPurchasePlatform();
     InAppPurchasePlatform.instance = fakePlatform;
 
-    expect(await inappPurchasePlugin.getPlatformVersion(), '42');
+    // expect(await inappPurchasePlugin.getPlatformVersion(), '42');
   });
 }

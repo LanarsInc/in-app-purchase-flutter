@@ -48,9 +48,11 @@ public class InappPurchasePlugin: NSObject, FlutterPlugin {
     }
     
     private func onRefreshProducts(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
-        print("Refresh products")
-        Task {
-            await InappPurchasePlugin.store.requestProducts()
+        if let arguments = RequestProductsArguments(call) {
+            Task {
+                await InappPurchasePlugin.store.requestProducts(for: arguments.identifiers)
+                result(nil)
+            }
         }
         result(nil)
     }
@@ -150,10 +152,23 @@ public class InappPurchasePlugin: NSObject, FlutterPlugin {
 }
 
 enum Method: String {
-    case refreshProducts = "refreshProducts()"
+    case refreshProducts = "requestProducts([String])"
     case buy = "buy(Product)"
     case restore = "restorePurchases()"
     case getPlatformVersion = "getPlatformVersion" // TODO: remove
+}
+
+struct RequestProductsArguments {
+    let identifiers: [String]
+    
+    init?(_ call: FlutterMethodCall) {
+        if let args = call.arguments as? [String: Any],
+           let identifiers = args["identifiers"] as? [String] {
+            self.identifiers = identifiers
+        } else {
+            return nil
+        }
+    }
 }
 
 struct BuyArguments {

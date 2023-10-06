@@ -23,10 +23,6 @@ abstract class InAppPurchasePlatform extends PlatformInterface {
     _instance = instance;
   }
 
-  Future<String?> getPlatformVersion() {
-    throw UnimplementedError('platformVersion() has not been implemented.');
-  }
-
   Stream<List<Product>> get availableSubscriptions =>
       throw UnimplementedError('availableSubscriptions has not been implemented.');
 
@@ -35,7 +31,8 @@ abstract class InAppPurchasePlatform extends PlatformInterface {
 
   void buy(Product product) => throw UnimplementedError('buy has not been implemented.');
 
-  void refreshProducts() => throw UnimplementedError('refreshProducts has not been implemented.');
+  void requestProducts(Set<String> identifiers) =>
+      throw UnimplementedError('refreshProducts has not been implemented.');
 
   void restore() => throw UnimplementedError('restore has not been implemented.');
 }

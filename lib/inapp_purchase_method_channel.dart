@@ -32,16 +32,6 @@ class MethodChannelInAppPurchase extends InAppPurchasePlatform {
   }
 
   @override
-  Future<String?> getPlatformVersion() async {
-    final args = {
-      'productId': 'basic_monthly',
-    };
-    await methodChannel.invokeMethod('buy(Product)', args);
-    final version = await methodChannel.invokeMethod<String>('getPlatformVersion');
-    return version;
-  }
-
-  @override
   Stream<List<Product>> get availableSubscriptions =>
       subscriptionsChannel.receiveBroadcastStream().map(
             (event) => (event as List<dynamic>).map(
@@ -72,8 +62,11 @@ class MethodChannelInAppPurchase extends InAppPurchasePlatform {
   }
 
   @override
-  void refreshProducts() {
-    methodChannel.invokeMethod('refreshProducts()');
+  void requestProducts(Set<String> identifiers) {
+    final args = {
+      'identifiers': identifiers.toList(),
+    };
+    methodChannel.invokeMethod('requestProducts([String])', args);
   }
 
   @override

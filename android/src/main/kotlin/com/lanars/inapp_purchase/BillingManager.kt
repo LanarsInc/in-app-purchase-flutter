@@ -116,10 +116,10 @@ class BillingManager(
         }
     }
 
-    suspend fun refreshProducts() {
+    suspend fun requestProducts(identifiers: List<String>) {
         val queryProductDetailsParams = QueryProductDetailsParams.newBuilder()
             .setProductList(
-                subscriptionIdentifiers.map {
+                identifiers.map {
                     Product.newBuilder()
                         .setProductId(it)
                         .setProductType(ProductType.SUBS)
@@ -153,7 +153,7 @@ class BillingManager(
         // TODO: handle result
     }
 
-     suspend fun refreshPurchases() {
+    suspend fun refreshPurchases() {
         val inAppParams = QueryPurchasesParams.newBuilder()
             .setProductType(ProductType.INAPP)
             .build()
@@ -173,11 +173,5 @@ class BillingManager(
                 handlePurchase(it)
             }
         }
-    }
-
-    companion object {
-        private val subscriptionIdentifiers = listOf(
-            "basic_subscription"
-        )
     }
 }

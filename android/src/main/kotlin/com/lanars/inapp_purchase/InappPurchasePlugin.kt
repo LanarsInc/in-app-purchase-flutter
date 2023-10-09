@@ -2,6 +2,7 @@ package com.lanars.inapp_purchase
 
 import android.app.Activity
 import android.util.Log
+import com.android.billingclient.api.BillingClient
 import com.android.billingclient.api.ProductDetails
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
@@ -28,7 +29,7 @@ private const val TAG = "InAppPurchasePlugin"
 /** InAppPurchasePlugin */
 class InAppPurchasePlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
 
-    private lateinit var billingManager: BillingManager
+    private lateinit var billingManager: BillingManager2
     private lateinit var methodChannel: MethodChannel
     private lateinit var subscriptionsChannel: EventChannel
     private lateinit var purchasedSubscriptionsChannel: EventChannel
@@ -67,10 +68,10 @@ class InAppPurchasePlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
     }
 
     override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
-        billingManager = BillingManager(
+        billingManager = BillingManager2(
             flutterPluginBinding.applicationContext,
             coroutineScope,
-            purchaseVerifier
+//            purchaseVerifier
         )
         methodChannel = MethodChannel(flutterPluginBinding.binaryMessenger, METHOD_CHANNEL_NAME)
         methodChannel.setMethodCallHandler(this)
@@ -102,7 +103,7 @@ class InAppPurchasePlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                 }
                 coroutineScope.launch(Dispatchers.IO) {
                     try {
-                        billingManager.requestProducts(identifiers)
+                        billingManager.refreshProducts(identifiers)
                         result.success(null)
                     } catch (e: Throwable) {
                         result.error(e.localizedMessage.orEmpty(), null, null)
@@ -122,17 +123,17 @@ class InAppPurchasePlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                     return
                 }
                 coroutineScope.launch {
-                    val product = billingManager.subscriptions.value.firstOrNull {
+                    val product = billingManager.products.value.firstOrNull {
                         it.productId == productId
                     } ?: run {
                         result.error("product not found", null, null)
                         return@launch
                     }
-                    billingManager.launchPurchase(
+                    /*billingManager.launchPurchase(
                         activity,
                         product,
                         product.subscriptionOfferDetails!!.first().offerToken
-                    )
+                    )*/
                     result.success(null)
                 }
             }
@@ -196,7 +197,7 @@ class InAppPurchasePlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
         override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
             this.eventSink = events
             listenJob = coroutineScope.launch {
-                billingManager.subscriptions.collect { subscriptions ->
+                billingManager.products.collect { subscriptions ->
                     sendEvent(subscriptions.map { it.toJsonString() })
                 }
             }
@@ -218,11 +219,11 @@ class InAppPurchasePlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
 
         override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
             this.eventSink = events
-            listenJob = coroutineScope.launch {
+            /*listenJob = coroutineScope.launch {
                 billingManager.purchasedSubscriptions.collect { subscriptions ->
                     sendEvent(subscriptions.map { it.toJsonString() })
                 }
-            }
+            }*/
         }
 
         override fun onCancel(arguments: Any?) {
@@ -248,6 +249,14 @@ fun ProductDetails.toJsonString(): String {
         put(
             "displayPrice",
             subscriptionOfferDetails!!.first().pricingPhases.pricingPhaseList.first().formattedPrice
+        )
+        put(
+            "type",
+            when (productType) {
+                BillingClient.ProductType.SUBS -> "autoRenewable"
+                BillingClient.ProductType.INAPP -> "consumable" // TODO: handle non-consumable
+                else -> ""
+            }
         )
     }
     return json.toString()

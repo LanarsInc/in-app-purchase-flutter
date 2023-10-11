@@ -11,13 +11,13 @@ import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
-import io.flutter.plugin.common.MethodChannel.Result
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 import java.lang.ref.WeakReference
@@ -71,7 +71,7 @@ class InAppPurchasePlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
         billingManager = BillingManager2(
             flutterPluginBinding.applicationContext,
             coroutineScope,
-//            purchaseVerifier
+            purchaseVerifier
         )
         methodChannel = MethodChannel(flutterPluginBinding.binaryMessenger, METHOD_CHANNEL_NAME)
         methodChannel.setMethodCallHandler(this)
@@ -87,7 +87,7 @@ class InAppPurchasePlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
         purchasedSubscriptionsChannel.setStreamHandler(PurchasedSubscriptionStreamHandler())
     }
 
-    override fun onMethodCall(call: MethodCall, result: Result) {
+    override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
         val method = Method.fromMethodName(call.method) ?: run {
             result.notImplemented()
             return
@@ -123,17 +123,17 @@ class InAppPurchasePlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
                     return
                 }
                 coroutineScope.launch {
-                    val product = billingManager.products.value.firstOrNull {
+                    val product = billingManager.products.first().firstOrNull {
                         it.productId == productId
                     } ?: run {
                         result.error("product not found", null, null)
                         return@launch
                     }
-                    /*billingManager.launchPurchase(
+                    billingManager.launchPurchase(
                         activity,
                         product,
                         product.subscriptionOfferDetails!!.first().offerToken
-                    )*/
+                    )
                     result.success(null)
                 }
             }
@@ -197,7 +197,7 @@ class InAppPurchasePlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
         override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
             this.eventSink = events
             listenJob = coroutineScope.launch {
-                billingManager.products.collect { subscriptions ->
+                billingManager.subscriptions.collect { subscriptions ->
                     sendEvent(subscriptions.map { it.toJsonString() })
                 }
             }
@@ -219,11 +219,11 @@ class InAppPurchasePlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
 
         override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
             this.eventSink = events
-            /*listenJob = coroutineScope.launch {
-                billingManager.purchasedSubscriptions.collect { subscriptions ->
-                    sendEvent(subscriptions.map { it.toJsonString() })
+            listenJob = coroutineScope.launch {
+                billingManager.purchasedProducts.collect { products ->
+                    sendEvent(products.map { it.toJsonString() })
                 }
-            }*/
+            }
         }
 
         override fun onCancel(arguments: Any?) {
